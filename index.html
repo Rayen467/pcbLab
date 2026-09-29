@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#08111f" />
+  <title>PCB Lab — Schematic & PCB Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand-wrap">
+        <button class="brand" id="brandButton" aria-label="PCB Lab home">
+          <span class="brand-mark">⌁</span>
+          <span>PCB<span>Lab</span></span>
+        </button>
+        <span class="top-divider"></span>
+        <button class="project-title" id="projectTitleButton">
+          <span class="project-dot"></span>
+          <span id="projectTitle">Indikator LED • 5 V</span>
+          <span class="chevron">⌄</span>
+        </button>
+        <span class="prototype-badge">PROTOTIPE</span>
+      </div>
+
+      <nav class="top-actions" aria-label="Aksi proyek">
+        <button class="ghost-btn" id="newProjectBtn">Baru</button>
+        <button class="ghost-btn" id="openBtn">Buka</button>
+        <button class="ghost-btn" id="saveBtn">Simpan</button>
+        <button class="ghost-btn" id="examplesBtn">Buka contoh</button>
+        <button class="icon-btn" id="guideBtn" title="Panduan">?</button>
+        <button class="primary-btn" id="exportBtn">Ekspor</button>
+        <button class="simulate-btn" id="simulateBtn"><span class="run-icon">▶</span> Simulasikan</button>
+      </nav>
+    </header>
+
+    <div class="workspace-grid">
+      <aside class="left-sidebar panel-border-right">
+        <section class="sidebar-section">
+          <div class="section-heading-row">
+            <div>
+              <p class="eyebrow">PUSTAKA KOMPONEN</p>
+              <h2>Komponen <span class="count-pill" id="componentCount">8</span></h2>
+            </div>
+          </div>
+
+          <label class="search-box">
+            <span>⌕</span>
+            <input id="componentSearch" type="search" placeholder="Cari komponen" autocomplete="off" />
+            <kbd>/</kbd>
+          </label>
+
+          <p class="library-label">SKEMATIK · MODEL DASAR</p>
+          <div class="component-list" id="componentList"></div>
+        </section>
+
+        <section class="sidebar-section learn-section">
+          <div class="learn-title-row">
+            <div>
+              <p class="eyebrow">DARI IDE KE RANGKAIAN</p>
+              <h3>Belajar sambil mencoba</h3>
+            </div>
+            <button class="mini-icon-btn" id="hideGuideBtn" title="Sembunyikan panduan">×</button>
+          </div>
+          <p class="muted">Pilih latihan. Jalankan, ubah satu nilai, lalu lihat bedanya.</p>
+          <div class="lesson-list">
+            <button class="lesson-item active" data-example="led"><span>1</span><b>Nyalakan LED</b><small>Dasar resistor seri</small></button>
+            <button class="lesson-item" data-example="divider"><span>2</span><b>Bagi tegangan</b><small>Voltage divider</small></button>
+            <button class="lesson-item" data-example="rc"><span>3</span><b>Isi kapasitor</b><small>Respons RC</small></button>
+          </div>
+        </section>
+      </aside>
+
+      <main class="editor-column">
+        <div class="mode-tabs" role="tablist">
+          <button class="mode-tab active" data-mode="schematic"><span>⌁</span> Skematik</button>
+          <button class="mode-tab" data-mode="pcb"><span>▦</span> Rakitan PCB</button>
+          <button class="mode-tab" data-mode="simulation"><span>∿</span> Simulasi</button>
+          <button class="mode-tab" data-mode="components"><span>☷</span> Komponen</button>
+        </div>
+
+        <div class="tool-row">
+          <div class="tool-group">
+            <button class="tool-btn active" data-tool="select" title="Pilih / geser"><span>↖</span><small>Pilih</small></button>
+            <button class="tool-btn" data-tool="wire" title="Kabel / jalur"><span>⌁</span><small>Kabel</small></button>
+            <button class="tool-btn" data-tool="pan" title="Geser bidang kerja"><span>✥</span><small>Geser</small></button>
+          </div>
+          <span class="tool-divider"></span>
+          <div class="tool-group compact-tools">
+            <button class="square-tool" id="undoBtn" title="Urungkan">↶</button>
+            <button class="square-tool" id="redoBtn" title="Ulangi">↷</button>
+            <button class="square-tool" id="rotateBtn" title="Putar 90 derajat">⤾</button>
+            <button class="square-tool" id="duplicateBtn" title="Duplikat">⧉</button>
+            <button class="square-tool danger-hover" id="deleteBtn" title="Hapus">⌫</button>
+          </div>
+          <div class="tool-spacer"></div>
+          <button class="erc-btn" id="ercBtn"><span>✓</span> ERC <span class="erc-count" id="ercCount">0</span></button>
+          <button class="fit-btn" id="fitBtn">⛶ <span>Sesuaikan</span></button>
+        </div>
+
+        <section class="canvas-shell" id="canvasShell">
+          <div class="canvas-grid" id="schematicCanvas" tabindex="0" aria-label="Kanvas skematik">
+            <svg id="wireLayer" class="wire-layer" aria-hidden="true"></svg>
+            <div id="componentLayer" class="component-layer"></div>
+            <div id="emptyState" class="empty-state hidden">
+              <div class="empty-icon">⌁</div>
+              <h3>Mulai skematik baru</h3>
+              <p>Tarik atau klik komponen dari pustaka di sebelah kiri.</p>
+            </div>
+            <div class="canvas-label">SCHEMATIC / <span id="sheetNumber">01</span></div>
+          </div>
+
+          <div class="canvas-statusbar">
+            <div class="status-left"><span class="status-dot"></span><span id="statusText">Siap · Pilih komponen untuk mengedit; tekan W untuk menghubungkan pin.</span></div>
+            <div class="status-right">
+              <span>Grid <b id="gridSizeLabel">10 px</b></span>
+              <button id="zoomOutBtn">−</button>
+              <span class="zoom-value" id="zoomValue">100%</span>
+              <button id="zoomInBtn">+</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="mode-placeholder hidden" id="pcbPanel">
+          <div class="pcb-toolbar-card">
+            <div><p class="eyebrow">BOARD SETUP</p><h3>2-layer PCB • FR-4 • 1.6 mm</h3></div>
+            <div class="pcb-stats"><span><b>3</b> footprint</span><span><b>3</b> net</span><span><b>2</b> layer</span></div>
+          </div>
+          <div class="pcb-board-wrap">
+            <div class="pcb-board" id="pcbBoard">
+              <div class="board-hole h1"></div><div class="board-hole h2"></div><div class="board-hole h3"></div><div class="board-hole h4"></div>
+              <div class="trace t1"></div><div class="trace t2"></div><div class="trace t3"></div>
+              <button class="footprint fp-source"><span>V1</span><i></i><i></i></button>
+              <button class="footprint fp-resistor"><span>R2</span><i></i><i></i></button>
+              <button class="footprint fp-led"><span>D3</span><i></i><i></i></button>
+            </div>
+          </div>
+        </section>
+
+        <section class="mode-placeholder hidden" id="simulationPanel">
+          <div class="simulation-header">
+            <div><p class="eyebrow">ANALISIS</p><h2>Simulasi rangkaian</h2><p class="muted">Model ideal / pendekatan linier untuk pembelajaran.</p></div>
+            <button class="simulate-btn" id="simulateSecondaryBtn"><span>▶</span> Jalankan</button>
+          </div>
+          <div class="simulation-grid">
+            <article class="metric-card"><span>Tegangan sumber</span><strong id="metricVoltage">5.00 V</strong><small>DC operating point</small></article>
+            <article class="metric-card"><span>Arus rangkaian</span><strong id="metricCurrent">9.09 mA</strong><small>Perkiraan model LED 2 V</small></article>
+            <article class="metric-card"><span>Daya resistor</span><strong id="metricPower">27.3 mW</strong><small>R2 • 330 Ω</small></article>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title"><span>Node voltage</span><small>Hasil operasi DC</small></div>
+            <div class="bar-chart" id="barChart"></div>
+          </div>
+        </section>
+
+        <section class="mode-placeholder hidden" id="componentsPanel">
+          <div class="table-head"><div><p class="eyebrow">BILL OF MATERIALS</p><h2>Komponen proyek</h2></div><button class="primary-btn" id="addPartBtn">+ Tambah komponen</button></div>
+          <div class="bom-table-wrap">
+            <table class="bom-table">
+              <thead><tr><th>Ref</th><th>Komponen</th><th>Nilai</th><th>Footprint</th><th>Status</th></tr></thead>
+              <tbody id="bomBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+
+      <aside class="right-sidebar panel-border-left">
+        <section class="right-section">
+          <p class="eyebrow">PROPERTI</p>
+          <div id="projectProperties" class="property-card project-property-card">
+            <span class="property-kicker">PROYEK AKTIF</span>
+            <h3 id="propertyProjectTitle">Indikator LED • 5 V</h3>
+            <div class="project-meta"><span><b id="physicalCount">3</b> komponen fisik</span><span><b id="netCount">3</b> net rangkaian</span></div>
+          </div>
+
+          <div id="componentProperties" class="property-card hidden">
+            <div class="property-head">
+              <div><span class="property-kicker">KOMPONEN TERPILIH</span><h3 id="selectedRef">R2</h3></div>
+              <button class="mini-icon-btn" id="closePropertiesBtn">×</button>
+            </div>
+            <label class="field-label">Nama / referensi<input id="propRef" type="text" /></label>
+            <label class="field-label">Nilai<input id="propValue" type="text" /></label>
+            <label class="field-label">Footprint<select id="propFootprint"><option>Axial DIN0207</option><option>0603 SMD</option><option>0805 SMD</option><option>THT 5mm</option></select></label>
+            <div class="property-actions"><button class="ghost-btn" id="rotatePropBtn">Putar</button><button class="danger-btn" id="deletePropBtn">Hapus</button></div>
+          </div>
+
+          <p class="context-help" id="propertyHelp">Klik komponen untuk mengatur nilainya. Semua ground menggunakan net 0.</p>
+        </section>
+
+        <section class="right-section inspection-section">
+          <div class="right-title-row"><div><p class="eyebrow">PERIKSA RANGKAIAN · ERC</p><h3>Analisis rangkaian</h3></div><span class="status-chip good" id="ercStatusChip">Siap</span></div>
+          <div class="check-list" id="checkList"></div>
+        </section>
+
+        <section class="right-section">
+          <div class="right-title-row"><div><p class="eyebrow">NET INSPECTOR</p><h3>Jaringan</h3></div><span class="count-pill" id="netInspectorCount">3</span></div>
+          <div class="net-list" id="netList"></div>
+        </section>
+      </aside>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+  <dialog id="projectDialog" class="app-dialog">
+    <form method="dialog" class="dialog-card" id="projectForm">
+      <div class="dialog-head"><div><p class="eyebrow">PROYEK</p><h2>Nama proyek</h2></div><button value="cancel" class="mini-icon-btn">×</button></div>
+      <label class="field-label">Nama<input id="projectNameInput" type="text" maxlength="60" /></label>
+      <div class="dialog-actions"><button value="cancel" class="ghost-btn">Batal</button><button value="default" class="primary-btn" id="applyProjectNameBtn">Simpan</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="exampleDialog" class="app-dialog">
+    <div class="dialog-card wide-dialog">
+      <div class="dialog-head"><div><p class="eyebrow">CONTOH RANGKAIAN</p><h2>Pilih contoh</h2></div><button class="mini-icon-btn" data-close-dialog="exampleDialog">×</button></div>
+      <div class="example-grid">
+        <button class="example-card" data-example="led"><span class="example-icon">✦</span><b>LED + resistor</b><small>Rangkaian dasar 5 V dengan LED 2 V.</small></button>
+        <button class="example-card" data-example="divider"><span class="example-icon">⌁</span><b>Pembagi tegangan</b><small>Dua resistor seri dengan titik ukur tengah.</small></button>
+        <button class="example-card" data-example="rc"><span class="example-icon">∿</span><b>Filter RC</b><small>Resistor + kapasitor untuk eksperimen transient.</small></button>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
